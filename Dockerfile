@@ -1,20 +1,27 @@
-# Use the khipu/openjdk17-alpine base image
-FROM khipu/openjdk17-alpine
-
-# Set the working directory inside the container.
+# Stage 1: Build the application using official Maven with OpenJDK 17
+FROM maven:3.8.5-openjdk-17 AS builder
 WORKDIR /app
 
-# Copy the pom.xml and any other necessary files for building the application
-COPY pom.xml /app/pom.xml
+# Copy configuration and dependencies framework
+COPY pom.xml .
+# Download dependencies beforehand to cache this layer
+RUN mvn dependency:go-offline -B
 
-# Copy the source code into the container
-COPY src /app/src
+# Copy project source code
+COPY src ./src
 
-# Install Maven (if not already included in the base image)
-RUN apk add --no-cache maven
-
-# Package the application using Maven
+# Compile and package application without running tests
 RUN mvn clean package -DskipTests
 
-# Run the application
-CMD ["java", "-jar", "target/online-banking-system-0.0.1-SNAPSHOT.jar"]
+# Stage 2: Create the runtime production image
+FROM khipu/openjdk17-alpine
+WORKDIR /app
+
+# Copy only the compiled artifact from the builder stage
+COPY --from=builder /app/target/online-banking-system-0.0.1-SNAPSHOT.jar app.jar
+
+# Expose your application port (adjust if your app runs on a different port like 8080)
+EXPOSE 8080
+
+# Execute the application
+ENTRYPOINT ["java", "-jar", "app.jar"]
