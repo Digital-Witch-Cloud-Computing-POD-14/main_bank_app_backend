@@ -36,8 +36,8 @@ public class SecurityConfig {
 	@Autowired
 	private JwtAuthFilter authFilter;
 
-	// 1. Pull the URL value from application.properties professionally
-	@Value("${app.cors.allowed-origins:http://localhost:3000}")
+	// 1. Pull the URL value from application.properties or environment variable professionally
+	@Value("${app.cors.allowed-origins:${CORS_ALLOWED_ORIGINS:http://localhost:3000}}")
 	private String allowedOrigins;
 
 	@Bean
@@ -104,7 +104,11 @@ public class SecurityConfig {
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
 		
-		configuration.setAllowedOrigins(List.of(allowedOrigins)); 
+		List<String> allowedOriginsList = Arrays.stream(allowedOrigins.split(","))
+				.map(String::trim)
+				.filter(origin -> !origin.isEmpty())
+				.toList();
+		configuration.setAllowedOrigins(allowedOriginsList);
 		configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 		configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
 		configuration.setAllowCredentials(true); 
