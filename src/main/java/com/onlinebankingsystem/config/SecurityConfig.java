@@ -1,6 +1,7 @@
 package com.onlinebankingsystem.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value; // Added this import
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -16,9 +17,15 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration; // Added this import
+import org.springframework.web.cors.CorsConfigurationSource; // Added this import
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource; // Added this import
 
 import com.onlinebankingsystem.filter.JwtAuthFilter;
 import com.onlinebankingsystem.utility.Constants.UserRole;
+
+import java.util.Arrays; // Added this import
+import java.util.List;   // Added this import
 
 @Configuration
 @EnableWebSecurity
@@ -27,6 +34,10 @@ public class SecurityConfig {
 	
 	@Autowired
 	private JwtAuthFilter authFilter;
+
+	// 1. Pull the URL value from application.properties professionally
+	@Value("${app.cors.allowed-origins:http://localhost:3000}")
+	private String allowedOrigins;
 
 	@Bean
 	// authentication
@@ -38,7 +49,8 @@ public class SecurityConfig {
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
 		http.csrf(csrf -> csrf.disable())
-		        .cors(cors -> cors.disable())
+		        // 2. FIXED: Link your professional CORS config source here instead of disabling it
+		        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 		    
 				.authorizeHttpRequests(
 						auth -> auth.requestMatchers("/api/user/login", "/api/user/admin/register").permitAll()
@@ -82,6 +94,21 @@ public class SecurityConfig {
 
 		return http.build();
 
+	}
+
+	// 3. Added this professional CORS rules bean configuration at the bottom
+	@Bean
+	public CorsConfigurationSource corsConfigurationSource() {
+		CorsConfiguration configuration = new CorsConfiguration();
+		
+		configuration.setAllowedOrigins(List.of(allowedOrigins)); 
+		configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+		configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
+		configuration.setAllowCredentials(true); 
+
+		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+		source.registerCorsConfiguration("/**", configuration); 
+		return source;
 	}
 
 	@Bean
