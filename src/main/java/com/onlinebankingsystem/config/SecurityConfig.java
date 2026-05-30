@@ -1,5 +1,6 @@
 package com.onlinebankingsystem.config;
 
+import org.springframework.http.HttpMethod;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value; // Added this import
 import org.springframework.context.annotation.Bean;
